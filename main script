@@ -1,0 +1,46 @@
+install.packages("jpeg")
+library(jpeg)
+
+#Opening a new image
+img <- readJPEG(file.choose())
+red <- img[,,1]
+
+height <- nrow(img)
+width <- ncol(img)
+
+#DISPLAY IMAGE
+plot(1, type="n", xlim=c(0,width), ylim=c(0,height),
+     xlab="", ylab="", asp=1, main="Click on coral points")
+rasterImage(img, 0, 0, width, height)
+# 7. Ask user to click multiple points
+cat("Click points on the coral. Press ESC when done.\n")
+pts <- locator(type="p")  # click multiple points
+
+# 8. Convert clicks to pixel coordinates
+xs <- round(pts$x)
+ys <- round(pts$y)
+ys_pix <- height - ys + 1   # flip y-axis for pixel indexing
+# 9. Extract red values at clicked points
+red_values <- mapply(function(x,y) red[y,x], xs, ys_pix)
+
+#showresults
+for(i in 1:length(red_values)){
+  cat("Point", i, ": Red =", red_values[i], "\n")
+}
+
+# xs <- round(pts$x)
+# ys <- round(pts$y)
+# height <- dim(img)[1]
+ys_pix <- dim(img)[1] - ys + 1  # flip y-axis
+
+# Extract RGB channels at the clicked points
+R <- mapply(function(x, y) img[y, x, 1], xs, ys_pix)
+G <- mapply(function(x, y) img[y, x, 2], xs, ys_pix)
+B <- mapply(function(x, y) img[y, x, 3], xs, ys_pix)
+
+# Identify dominant channel at each point
+dominant <- apply(cbind(R, G, B), 1, function(px) {
+  c("R","G","B")[which.max(px)]
+})
+# Show Result 
+dominant
