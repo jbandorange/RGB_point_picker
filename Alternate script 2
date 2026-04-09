@@ -1,0 +1,54 @@
+install.packages("jpeg")
+library(jpeg)
+
+# 1. Load image
+img <- readJPEG(file.choose())
+red <- img[,,1]
+
+h <- dim(img)[1]
+w <- dim(img)[2]
+
+# 2. Display image
+plot(1, type="n", xlim=c(1,w), ylim=c(1,h),
+     xlab="", ylab="", asp=1,
+     main="Click coral points (ESC to finish)")
+
+rasterImage(img, 1, 1, w, h)
+
+cat("Click points. Press ESC when done.\n")
+
+# 3. Get clicks
+pts <- locator(type = "p")
+
+xs <- round(pts$x)
+ys <- round(pts$y)
+
+# 4. Convert to pixel coordinates
+ys_pix <- h - ys + 1
+
+# 5. Extract RGB values
+R <- mapply(function(x,y) img[y, x, 1], xs, ys_pix)
+G <- mapply(function(x,y) img[y, x, 2], xs, ys_pix)
+B <- mapply(function(x,y) img[y, x, 3], xs, ys_pix)
+
+# 6. Red values (optional direct channel)
+red_values <- R
+
+# 7. Dominant channel
+dominant <- apply(cbind(R, G, B), 1, function(px) {
+  c("R","G","B")[which.max(px)]
+})
+
+# 8. Combine results
+results <- data.frame(
+  x = xs,
+  y = ys,
+  R = R,
+  G = G,
+  B = B,
+  Red = red_values,
+  Dominant = dominant
+)
+
+# 9. Print results
+print(results)
