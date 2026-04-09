@@ -1,0 +1,56 @@
+install.packages("jpeg")
+library(jpeg)
+
+# 1. Select the file from Finder
+message("Select your coral JPEG file...")
+img_path <- file.choose()
+img <- readJPEG(img_path)
+
+# Get image dimensions [rows (height), columns (width), channels]
+dims <- dim(img)
+h <- dims[1]
+w <- dims[2]
+
+# 2. Display the image
+# We set up the plot area to match the pixel dimensions
+par(mar=c(2, 2, 2, 2)) # Small margins
+plot(c(1, w), c(1, h), type='n', asp=1, 
+     xlab="Pixels (Width)", ylab="Pixels (Height)", 
+     main="Click points to sample Red Channel. Press ESC when finished.")
+
+# Plot the image. rasterImage(image, xleft, ybottom, xright, ytop)
+# We plot it so the coordinates match the array indices
+rasterImage(img, 1, 1, w, h)
+
+# 3. User interaction
+# Click on the image. Press 'Esc' or 'Finish' in the plot window to stop.
+message("Click the points on the image you want to measure. Press ESC to stop.")
+pts <- locator(type="p", col="blue", pch=1, cex=1.5)
+
+# 4. Extract Red Channel values
+if(!is.null(pts)) {
+  # Map click coordinates to array indices
+  # x maps to columns, y maps to rows (but inverted because plot 1 is at the bottom)
+  col_idx <- round(pts$x)
+  row_idx <- round(h - pts$y + 1)
+  
+  # Ensure clicks stayed within image bounds
+  valid <- col_idx >= 1 & col_idx <= w & row_idx >= 1 & row_idx <= h
+  
+  # Extract red channel (the 1st layer of the array)
+  # readJPEG already provides values on a 0-1 scale
+  red_values <- img[cbind(row_idx[valid], col_idx[valid], 1)]
+  
+  # Combine into a clean table
+  results <- data.frame(
+    Point = 1:sum(valid),
+    X_Pixel = col_idx[valid],
+    Y_Pixel = row_idx[valid],
+    Red_Value = round(red_values, 4)
+  )
+  
+  print("--- Red Channel Samples (0-1 Scale) ---")
+  print(results)
+} else {
+  message("No points selected.")
+}
